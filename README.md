@@ -1,4 +1,20 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## work/first
+
+[https://medium.com/@stopyransky/react-hooks-and-d3-39be1d900fb](https://medium.com/@stopyransky/react-hooks-and-d3-39be1d900fb)
+
+## work/second
+
+[https://medium.com/@jeffbutsch/using-d3-in-react-with-hooks-4a6c61f1d102](https://medium.com/@jeffbutsch/using-d3-in-react-with-hooks-4a6c61f1d102)
+
+
+## back
+
+http://localhost:8080/ohlc/?chartEntityId=2190&last=30
+http://localhost:8080/macd/?macdDefinitionId=2189&last=30
+
+http://localhost:8080/ohlc/?chartEntityId=9395&last=35
+http://localhost:8080/macd/?macdDefinitionId=9394&last=35
+
 
 ## Available Scripts
 
