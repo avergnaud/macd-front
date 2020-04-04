@@ -23,6 +23,10 @@ export const ohlcChart = () => {
         .tickPadding(5)
         .tickFormat(timeFormat);
 
+    const yAxis = d3.axisRight(yScale)
+        .tickValues(yScale.domain())
+        .tickFormat(d => (d + "€"));
+
     function chart(selection) {
 
         selection.each(function (data) {
@@ -56,10 +60,7 @@ export const ohlcChart = () => {
             yScale.domain([yMin, yMax])
                 .range([height - margin.top, margin.bottom]);
 
-            /* set up axes */
-            const yAxis = d3.axisRight(yScale)
-                .tickValues(yScale.domain())
-                .tickFormat(d => (d + "€"));
+            /* set up axes */       
             if (timeFormat == null) {
                 return;
             }
@@ -81,11 +82,15 @@ export const ohlcChart = () => {
                 .attr("fill", d => (d.open > d.close ? "red" : "green"))
                 .attr("stroke", "black");
 
-            d3.select(this).append('g').call(yAxis)
-                .attr('transform', 'translate(' + (width - margin.axis) + ', 0)');
+            d3.select(this).append('g')
+                .attr("class", "yaxis")
+                .attr('transform', 'translate(' + (width - margin.axis) + ', 0)')
+                .call(yAxis);
 
-            d3.select(this).append('g').call(xAxis)
-                .attr('transform', 'translate(0, ' + (height - margin.bottom) + ')');
+            d3.select(this).append('g')
+                .attr("class", "xaxis")
+                .attr('transform', 'translate(0, ' + (height - margin.bottom) + ')')
+                .call(xAxis);
         });
     }
 
