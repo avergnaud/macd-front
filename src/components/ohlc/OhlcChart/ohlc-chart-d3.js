@@ -17,7 +17,7 @@ export const ohlcChart = () => {
     const timeFormat = d3.timeFormat("%Y-%m-%d %I:%M");
     const xScale = d3.scaleTime();
     const yScale = d3.scaleLinear();
-    const xAxisScale = d3.scaleTime();
+    const xAxisScale = d3.scaleTime();//TODO c'est le même que xScale
     const xAxis = d3.axisBottom(xAxisScale)
         .ticks(5)
         .tickPadding(5)

@@ -3,145 +3,130 @@
 
 <head>
   <meta charset="utf-8" />
-  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
-  <style>
-    .axis path {
-      display: none;
-    }
-    
-    .axis line {
-      stroke-opacity: 0.3;
-      shape-rendering: crispEdges;
-    }
-    
-    .view {
-      fill: url(#gradient);
-      stroke: #000;
-    }
-    
-    button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-    }
-  </style>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 </head>
 
 <body>
-  <svg width="500" height="500"></svg>
-  
-  <script src="//d3js.org/d3.v4.min.js"></script>
+
+  <h1>Test</h1>
+  <div class="container">
+      <div class="row">
+          <div id="chart-area"></div>
+      </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.1/d3.min.js" integrity="sha256-SQJ/nCYPXFPuqoS56EfnesDBPNiitndOIfN2WdPRi/o=" crossorigin="anonymous"></script>
   <script>
-  
-    // 10,000 random data points
-    var data = d3.range(1, 10000).map(function(d) {
-      return {
-        i: d,
-        x: Math.random() < 0.5 ? Math.random() * 1000 : Math.random() * -1000,
-        y: Math.random() < 0.5 ? Math.random() * 1000 : Math.random() * -1000,
-      }
-    });
 
-    var svg = d3.select("svg"),
-      margin = {
-        top: 10,
-        right: 10,
-        bottom: 10,
-        left: 10
-      },
-      width = +svg.attr("width") - margin.left - margin.right,
-      height = +svg.attr("height") - margin.top - margin.bottom,
-      g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // large "endless" zoom
-    var zoom = d3.zoom()
-      .scaleExtent([1, 1])
-      .translateExtent([
-        [-1e100, 0],
-        [1e100, 100]
-      ])
-      .on("zoom", zoomed);
+    const margin = {
+      top: 50,
+      right: 55,
+      bottom: 50,
+      left: 0,
+      axis: 55
+    },
+      width = 435 + margin.right + margin.left,
+      height = 167 + margin.top + margin.bottom,
+      timeFormat = d3.timeFormat("%Y-%m-%d"),
+      x_scale = d3.scaleTime(),
+      y_scale = d3.scaleLinear(),
+      svg = d3.select("#chart-area").append("svg")
+        .attr("width", width)
+        .attr("height", height),
+      g = svg.append("g")
+        .attr("transform(0,0)");
 
-    var x = d3.scaleLinear()
-      .domain([-100, 100])
-      .range([0, width]);
+    let rectSelection = svg.selectAll("rect");
 
-    var y = d3.scaleLinear()
-      .domain([-100, 100])
-      .range([height, 0]);
+    let xAxis = d3.axisBottom(x_scale)
+      .ticks(5)
+      .tickPadding(5)
+      .tickFormat(timeFormat),
+      yAxis = d3.axisRight(y_scale)
+        .tickFormat(d => (d + "€"));
 
-    var xAxis = d3.axisBottom(x)
-      .ticks((width + 2) / (height + 2) * 10)
-      .tickSize(-height);
+    const x_axis = svg.append('g')
+      .attr("class", "xaxis")
+      .attr('transform', 'translate(0, ' + (height - margin.bottom) + ')'),
+      y_axis = svg.append('g')
+        .attr("class", "yaxis")
+        .attr('transform', 'translate(' + (width - margin.axis) + ', 0)');
 
-    var yAxis = d3.axisRight(y)
-      .ticks(10)
-      .tickSize(width)
-      .tickPadding(8 - width);
+    d3.json("http://localhost:8080/ohlc/?chartEntityId=9395")
+      .then(data => {
 
-    var gX = svg.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .attr("class", "axis axis--x")
-      .call(xAxis);
+        const zoom = d3.zoom()
+          .on("zoom", zoomed);
 
-    var gY = svg.append("g")
-      .attr("class", "axis axis--y")
-      .call(yAxis);
+        data = data.map(item => ({
+          timeStamp: item.timeEpochTimestamp * 1000,
+          time: new Date(item.timeEpochTimestamp * 1000),
+          open: item.openingPrice,
+          high: item.highPrice,
+          low: item.lowPrice,
+          close: item.closingPrice
+        }));
 
-    svg.call(zoom);
+        let day = new Date();
+        day.setDate(day.getDate() - 25);
+        const xMin = day;
+        const xMax = d3.max(data, d => new Date(Math.max(d.timeStamp)));
+        x_scale.domain([xMin, xMax])
+          .range([margin.left, width - margin.right]);
 
-    // plot our data initially
-    updateData(x, y);
+        let visibleData = data.filter(item => (
+          item.time >= x_scale.invert(margin.left)
+          && item.time <= x_scale.invert(width - margin.right)
+        ));
 
-    function zoomed() {
-      var t = d3.event.transform,
-        sx = t.rescaleX(x), //<-- rescale the scales
-        sy = t.rescaleY(x);
+        const yMin = d3.min(visibleData, d => Math.min(d.low));
+        const yMax = d3.max(visibleData, d => Math.max(d.high));
+        y_scale.domain([yMin, yMax])
+          .range([height - margin.top, margin.bottom]);
 
-      // swap out axis
-      gX.call(xAxis.scale(sx));
-      gY.call(yAxis.scale(sy));
+        rectSelection = rectSelection.data(data).enter()
+          .append("svg:rect")
+          .attr("width", 10)
+          .attr("x", d => x_scale(d.time))
+          .attr("y", d => y_scale(Math.max(d.open, d.close)))
+          .attr("height", d => (y_scale(Math.min(d.open, d.close)) - y_scale(Math.max(d.open, d.close))))
+          .attr("fill", d => (d.open > d.close ? "red" : "green"))
+          .attr("stroke", "black");
 
-      updateData(sx, sy)
-    }
+        y_axis.call(yAxis);
 
-    // classic enter, update, exit pattern
-    function updateData(sx, sy) {
+        x_axis.call(xAxis);
 
-      // filter are data to those points in range
-      var f = data.filter(function(d) {
-        return (
-          d.x > sx.domain()[0] &&
-          d.x < sx.domain()[1] &&
-          d.y > sy.domain()[0] &&
-          d.y < sy.domain()[1]
-        )
+        svg.call(zoom);
+
+        function zoomed() {
+
+          let new_x_scale = d3.event.transform.rescaleX(x_scale);
+          xAxis = xAxis.scale(new_x_scale);
+          x_axis.call(xAxis);
+
+          let visibleData = data.filter(item => (
+            item.time >= new_x_scale.invert(margin.left)
+            && item.time <= new_x_scale.invert(width - margin.right)
+          ));
+
+          const yMin = d3.min(visibleData, d => Math.min(d.low));
+          const yMax = d3.max(visibleData, d => Math.max(d.high));
+          y_scale.domain([yMin, yMax]);
+          yAxis = yAxis.scale(y_scale);
+          y_axis.call(yAxis);
+
+          rectSelection
+            .attr("x", d => new_x_scale(d.time))
+            .attr("y", d => y_scale(Math.max(d.open, d.close)))
+            .attr("height", d => (y_scale(Math.min(d.open, d.close)) - y_scale(Math.max(d.open, d.close))))
+
+            ;
+        }
       });
 
-      var s = g.selectAll(".point")
-        .data(f, function(d) {
-          return d.i;
-        });
 
-      // remove those out of range
-      s.exit().remove();
-
-      // add the new ones in range
-      s = s.enter()
-        .append('circle')
-        .attr('class', 'point')
-        .attr('r', 10)
-        .style('fill', 'steelblue')
-        .merge(s);
-
-      // update all in range
-      s.attr('cx', function(d) {
-          return sx(d.x);
-        })
-        .attr('cy', function(d) {
-          return sy(d.y);
-        });
-    }
   </script>
 </body>
 
