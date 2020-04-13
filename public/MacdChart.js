@@ -29,9 +29,12 @@ class MacdChart {
             .attr("height", this.ohlcHeight + this.macdHeight);
         this.ohlcG = this.svg.append("g")
             .attr("transform", "translate(-" + this.margin.yaxis + ",0)");
+        this.macdG = this.svg.append("g")
+            .attr("transform", "translate(-" + this.margin.yaxis + "," + this.ohlcHeight + ")");
         this.createScales(newData);
         this.addAxes();
         this.drawOhlc(newData);
+        this.drawMacd(newData);
     }
 
     /* setup scales from new data */
@@ -44,21 +47,29 @@ class MacdChart {
         this.x_scale = d3.scaleTime()
             .domain([xMin, xMax])
             .range([this.margin.left, this.width]);
-        /* this.y_scale: */
+        /* this.yOhlcScale: */
         let visibleData = newData.filter(item => (
             item.time >= this.x_scale.invert(this.margin.left)
             && item.time <= this.x_scale.invert(this.width)
         ));
-        const yMin = d3.min(visibleData, d => Math.min(d.low));
-        const yMax = d3.max(visibleData, d => Math.max(d.high));
-        this.y_scale = d3.scaleLinear()
-            .domain([yMin, yMax])
+        const yOlhcMin = d3.min(visibleData, d => Math.min(d.low));
+        const yOhlcMax = d3.max(visibleData, d => Math.max(d.high));
+        this.yOhlcScale = d3.scaleLinear()
+            .domain([yOlhcMin, yOhlcMax])
             .range([this.ohlcHeight - this.margin.top, this.margin.bottom]);
+        /* this.yMacdScale: */
+        const yMacdMin = d3.min(visibleData, d => Math.min(d.macd, d.signal));
+        const yMacdMax = d3.max(visibleData, d => Math.max(d.macd, d.signal));
+        if (yMacdMin === undefined || yMacdMax === undefined) {
+            return;
+        }
+        this.yMacdScale = d3.scaleLinear()
+            .domain([yMacdMin, yMacdMax])
+            .range([this.macdHeight - this.margin.top, this.margin.bottom])
     }
 
     /* setup x and y axes */
     addAxes() {
-
         /* see later: this.xAxisG.call(this.xAxis) */
         this.xAxis = d3.axisBottom(this.x_scale)
             .ticks(5)
@@ -67,10 +78,10 @@ class MacdChart {
         this.xAxisG = this.ohlcG.append('g')
             .attr("class", "xaxis")
             .attr('transform', 'translate(0, ' + (this.ohlcHeight - this.margin.bottom) + ')');
-        /* see later: this.yAxisG.call(this.yAxis) */
-        this.yAxis = d3.axisRight(this.y_scale)
+        /* see later: this.yOhlcAxisG.call(this.yOhlcAxis) */
+        this.yOhlcAxis = d3.axisRight(this.yOhlcScale)
             .tickFormat(d => (d + "€"));
-        this.yAxisG = this.svg.append('g')
+        this.yOhlcAxisG = this.svg.append('g')
             .attr("class", "yaxis")
             .attr('transform', 'translate(' + (this.width - this.margin.yaxis) + ', 0)');
     }
@@ -86,8 +97,8 @@ class MacdChart {
             .attr("class", "ohlc")
             .attr("x1", d => (this.x_scale(d.time)))
             .attr("x2", d => (this.x_scale(d.time)))
-            .attr("y1", d => (this.y_scale(d.high)))
-            .attr("y2", d => (this.y_scale(d.low)))
+            .attr("y1", d => (this.yOhlcScale(d.high)))
+            .attr("y2", d => (this.yOhlcScale(d.low)))
             .attr("stroke", "black")
             .attr("clip-path", "url(#ohlc-clip)");
         /* draws the rectangles representing Open and Close values of OHLC: */
@@ -95,9 +106,9 @@ class MacdChart {
             .append("svg:rect")
             .attr("width", 10)
             .attr("x", d => this.x_scale(d.time) - 5)
-            .attr("y", d => this.y_scale(Math.max(d.open, d.close)))
-            .attr("height", d => (this.y_scale(Math.min(d.open, d.close))
-                - this.y_scale(Math.max(d.open, d.close))))
+            .attr("y", d => this.yOhlcScale(Math.max(d.open, d.close)))
+            .attr("height", d => (this.yOhlcScale(Math.min(d.open, d.close))
+                - this.yOhlcScale(Math.max(d.open, d.close))))
             .attr("fill", d => (d.open > d.close ? "red" : "green"))
             .attr("stroke", "black")
             .on("mouseover", d => {
@@ -115,7 +126,7 @@ class MacdChart {
             })
             .attr("clip-path", "url(#ohlc-clip)");
         /* adds each axis to its g element: */
-        this.yAxisG.call(this.yAxis);
+        this.yOhlcAxisG.call(this.yOhlcAxis);
         this.xAxisG.call(this.xAxis);
         /* manages the horizontal panning without zoom: */
         this.zoom = d3.zoom()
@@ -123,9 +134,41 @@ class MacdChart {
         this.svg.call(this.zoom);
     }
 
+    /* draws the MACD part of the graph 
+    */
+    drawMacd(newData) {
+
+        this.macdLine = d3.line()
+            .curve(d3.curveCatmullRom)
+            .x(d => this.x_scale(d.time))
+            .y(d => this.yMacdScale(d.macd));
+
+        this.signalLine = d3.line()
+            .curve(d3.curveCatmullRom)
+            .x(d => this.x_scale(d.time))
+            .y(d => this.yMacdScale(d.signal));
+
+        this.macdG.append("path")
+            .data([newData])
+            .attr("class", "line")
+            .style("stroke", "blue")
+            .attr("d", this.macdLine)
+            .style("fill", "none")
+            .attr('pointer-events', 'visibleStroke')
+            .on("mouseover", function (d) {
+                console.log(d);
+            });
+
+        this.macdG.append("path")
+            .data([newData])
+            .attr("class", "line")
+            .style("stroke", "red")
+            .attr("d", this.signalLine)
+            .style("fill", "none");
+    }
+
     /* this clipPath hides some elements from overflowing */
     addOhlcClip() {
-
         this.svg.append("clipPath")
             .attr("id", "ohlc-clip")
             .append("rect")
@@ -135,7 +178,6 @@ class MacdChart {
 
     /* Define the div for the tooltip */
     addTooltipDiv() {
-        
         this.div = d3.select(this.element).append("div")
             .attr("class", "tooltip")
             .style("opacity", 0);
@@ -145,31 +187,28 @@ class MacdChart {
     zoomed(newData) {
         /* xAxis */
         let new_x_scale = d3.event.transform.rescaleX(this.x_scale);
-        this.xAxis = d3.axisBottom(new_x_scale)
-            .ticks(5)
-            .tickPadding(5)
-            .tickFormat(this.timeFormat);
         this.xAxisG.call(this.xAxis.scale(new_x_scale));
-        /* yAxis */
+        /* yOhlcAxis */
         let visibleData = newData.filter(item => (
             item.time >= new_x_scale.invert(this.margin.left)
             && item.time <= new_x_scale.invert(this.width)
         ));
-        const yMin = d3.min(visibleData, d => Math.min(d.low));
-        const yMax = d3.max(visibleData, d => Math.max(d.high));
-        this.y_scale.domain([yMin, yMax]);
-        this.yAxisG.call(this.yAxis.scale(this.y_scale));
+        const yOlhcMin = d3.min(visibleData, d => Math.min(d.low));
+        const yOhlcMax = d3.max(visibleData, d => Math.max(d.high));
+        this.yOhlcScale.domain([yOlhcMin, yOhlcMax]);
+        this.yOhlcAxisG.call(this.yOhlcAxis.scale(this.yOhlcScale));
         /* OHLC lines */
         this.ohlcG.selectAll("line.ohlc")
             .attr("x1", d => (new_x_scale(d.time)))
             .attr("x2", d => (new_x_scale(d.time)))
-            .attr("y1", d => (this.y_scale(d.high)))
-            .attr("y2", d => (this.y_scale(d.low)));
+            .attr("y1", d => (this.yOhlcScale(d.high)))
+            .attr("y2", d => (this.yOhlcScale(d.low)));
         /* OHLC reactangles */
         this.ohlcG.selectAll("rect")
             .attr("x", d => new_x_scale(d.time) - 5)
-            .attr("y", d => this.y_scale(Math.max(d.open, d.close)))
-            .attr("height", d => (this.y_scale(Math.min(d.open, d.close))
-                - this.y_scale(Math.max(d.open, d.close))));
+            .attr("y", d => this.yOhlcScale(Math.max(d.open, d.close)))
+            .attr("height", d => (this.yOhlcScale(Math.min(d.open, d.close))
+                - this.yOhlcScale(Math.max(d.open, d.close))));
+        /* MACD line */
     }
 }

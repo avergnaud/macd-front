@@ -79,8 +79,8 @@
             high: item.highPrice,
             low: item.lowPrice,
             close: item.closingPrice,
-            macdValue: macd ? macd.macdValue : undefined,
-            signalValue: macd ? macd.signalValue : undefined
+            macd: macd ? macd.macdValue : undefined,
+            signal: macd ? macd.signalValue : undefined
         }});
 
       chart.draw(formattedData);

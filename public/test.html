@@ -33,167 +33,60 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.15.1/d3.min.js"
     integrity="sha256-SQJ/nCYPXFPuqoS56EfnesDBPNiitndOIfN2WdPRi/o=" crossorigin="anonymous"></script>
+
+  <script src="./MacdChart.js"></script>
+
   <script>
 
-
-    const margin = {
-      top: 50,
-      right: 50,
-      bottom: 50,
-      left: 0,
-      xaxis: 50,
-      yaxis: 50
-    },
-      width = 435 + margin.right + margin.left,
-      ohlcHeight = 167 + margin.top + margin.bottom,
-      macdHeight = 100 + margin.top + margin.bottom,
-      timeFormat = d3.timeFormat("%Y-%m-%d"),
-      x_scale = d3.scaleTime(),
-      y_scale = d3.scaleLinear(),
-      svg = d3.select("#chart-area").append("svg")
-        .attr("width", width)
-        .attr("height", ohlcHeight + macdHeight),
-    ohlcClippath = svg.append("clipPath")
-      .attr("id", "ohlc-clip")
-      .append("rect")
-      .attr("width", width)
-      .attr("height", ohlcHeight),
-      ohlcG = svg.append("g")
-        .attr("transform", "translate(-" + margin.yaxis + ",0)");
-
-    let rectSelection = ohlcG.selectAll("rect");
-    let lineSelection = ohlcG.selectAll("line");
-
-    let xAxis = d3.axisBottom(x_scale)
-      .ticks(5)
-      .tickPadding(5)
-      .tickFormat(timeFormat),
-      yAxis = d3.axisRight(y_scale)
-        .tickFormat(d => (d + "€"));
-
-    const x_axis = ohlcG.append('g')
-      .attr("class", "xaxis")
-      .attr('transform', 'translate(0, ' + (ohlcHeight - margin.bottom) + ')'),
-      y_axis = svg.append('g')
-        .attr("class", "yaxis")
-        .attr('transform', 'translate(' + (width - margin.yaxis) + ', 0)');
-
-    // Define the div for the tooltip
-    const div = d3.select("#chart-area").append("div")
-      .attr("class", "tooltip")
-      .style("opacity", 0);
-
+    const chart = new MacdChart({
+      element: document.querySelector('#chart-area'),
+      config: {
+        innerWidth: 435,
+        innerOhlcHeight: 167,
+        innerMacdHeight: 100,
+        margin: {
+          top: 50,
+          right: 50,
+          bottom: 50,
+          left: 0,
+          xaxis: 50,
+          yaxis: 50
+        },
+        timeFormat: "%Y-%m-%d"
+      }
+    });
 
     Promise.all([
       d3.json("http://localhost:8080/ohlc/?chartEntityId=9395"),
       d3.json("http://localhost:8080/macd/?macdDefinitionId=9394"),
-    ]).then(function (datas) {
-      // files[0] will contain file1.csv
-      // files[1] will contain file2.csv
-      let data = datas[0];
+    ]).then(function (data) {
 
-      const zoom = d3.zoom()
-        /*.translateExtent([[-Infinity, -Infinity], [Infinity, Infinity]])
-        .extent([[0,0],[width - margin.right, ohlcHeight]])*/
-        .on("zoom", zoomed);
+      const macdByTimestamp = new Map();
+      data[1].forEach(item => {
+        macdByTimestamp.set(item.timeEpochTimestamp, {
+          macdValue: item.macdValue,
+          signalValue: item.signalValue
+        });
+      });
+      let ohlcData = data[0];
 
-      data = data.map(item => ({
-        timeStamp: item.timeEpochTimestamp * 1000,
-        time: new Date(item.timeEpochTimestamp * 1000),
-        open: item.openingPrice,
-        high: item.highPrice,
-        low: item.lowPrice,
-        close: item.closingPrice
-      }));
+      let formattedData = ohlcData.map(item => {
+        let macd = macdByTimestamp.get(item.timeEpochTimestamp);
+        return {
+            timeStamp: item.timeEpochTimestamp * 1000,
+            time: new Date(item.timeEpochTimestamp * 1000),
+            open: item.openingPrice,
+            high: item.highPrice,
+            low: item.lowPrice,
+            close: item.closingPrice,
+            macdValue: macd ? macd.macdValue : undefined,
+            signalValue: macd ? macd.signalValue : undefined
+        }});
 
-      let day = new Date();
-      day.setDate(day.getDate() - 25);
-      const xMin = day;
-      let xMax = d3.max(data, d => new Date(Math.max(d.timeStamp)));
-      xMax.setDate(xMax.getDate() + 1);
-      x_scale.domain([xMin, xMax])
-        .range([margin.left, width]);
+      chart.draw(formattedData);
+    });
 
-      let visibleData = data.filter(item => (
-        item.time >= x_scale.invert(margin.left)
-        && item.time <= x_scale.invert(width)
-      ));
 
-      const yMin = d3.min(visibleData, d => Math.min(d.low));
-      const yMax = d3.max(visibleData, d => Math.max(d.high));
-      y_scale.domain([yMin, yMax])
-        .range([ohlcHeight - margin.top, margin.bottom]);
-
-      lineSelection = lineSelection.data(data).enter()
-        .append("svg:line")
-        .attr("x1", d => (x_scale(d.time)))
-        .attr("x2", d => (x_scale(d.time)))
-        .attr("y1", d => (y_scale(d.high)))
-        .attr("y2", d => (y_scale(d.low)))
-        .attr("stroke", "black")
-        .attr("clip-path", "url(#ohlc-clip)");
-
-      rectSelection = rectSelection.data(data).enter()
-        .append("svg:rect")
-        .attr("width", 10)
-        .attr("x", d => x_scale(d.time) - 5)
-        .attr("y", d => y_scale(Math.max(d.open, d.close)))
-        .attr("height", d => (y_scale(Math.min(d.open, d.close)) - y_scale(Math.max(d.open, d.close))))
-        .attr("fill", d => (d.open > d.close ? "red" : "green"))
-        .attr("stroke", "black")
-        .on("mouseover", function (d) {
-          div.transition()
-            .duration(200)
-            .style("opacity", .9);
-          div.html(timeFormat(d.time) + "<br/>" + d.close + "€")
-            .style("left", (d3.event.pageX) + 28 + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseout", function (d) {
-          div.transition()
-            .duration(500)
-            .style("opacity", 0);
-        })
-        .attr("clip-path", "url(#ohlc-clip)");
-
-      y_axis.call(yAxis);
-
-      x_axis.call(xAxis);
-
-      svg.call(zoom);
-
-      function zoomed() {
-
-        let new_x_scale = d3.event.transform.rescaleX(x_scale);
-        xAxis = xAxis.scale(new_x_scale);
-        x_axis.call(xAxis);
-
-        let visibleData = data.filter(item => (
-          item.time >= new_x_scale.invert(margin.left)
-          && item.time <= new_x_scale.invert(width)
-        ));
-
-        const yMin = d3.min(visibleData, d => Math.min(d.low));
-        const yMax = d3.max(visibleData, d => Math.max(d.high));
-        y_scale.domain([yMin, yMax]);
-        yAxis = yAxis.scale(y_scale);
-        y_axis.call(yAxis);
-
-        lineSelection
-          .attr("x1", d => (new_x_scale(d.time)))
-          .attr("x2", d => (new_x_scale(d.time)))
-          .attr("y1", d => (y_scale(d.high)))
-          .attr("y2", d => (y_scale(d.low)));
-
-        rectSelection
-          .attr("x", d => new_x_scale(d.time) - 5)
-          .attr("y", d => y_scale(Math.max(d.open, d.close)))
-          .attr("height", d => (y_scale(Math.min(d.open, d.close)) - y_scale(Math.max(d.open, d.close))));
-      }
-
-    }).catch(function (err) {
-      console.log(`ERROR ${err}`);
-    })
 
 
   </script>
