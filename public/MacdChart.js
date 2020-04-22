@@ -65,7 +65,7 @@ class MacdChart {
         }
         this.yMacdScale = d3.scaleLinear()
             .domain([yMacdMin, yMacdMax])
-            .range([this.macdHeight - this.margin.top, this.margin.bottom])
+            .range([this.macdHeight - this.margin.top, this.margin.bottom]);
     }
 
     /* setup x and y axes */
@@ -148,32 +148,31 @@ class MacdChart {
             .x(d => this.x_scale(d.time))
             .y(d => this.yMacdScale(d.signal));
 
-        this.macdG.append("path")
+        this.macdPath = this.macdG.append("path")
             .data([newData])
             .attr("class", "line")
             .style("stroke", "blue")
             .attr("d", this.macdLine)
             .style("fill", "none")
             .attr('pointer-events', 'visibleStroke')
-            .on("mouseover", function (d) {
-                console.log(d);
-            });
+            .attr("clip-path", "url(#ohlc-clip)");
 
-        this.macdG.append("path")
+        this.signalPath = this.macdG.append("path")
             .data([newData])
             .attr("class", "line")
             .style("stroke", "red")
             .attr("d", this.signalLine)
-            .style("fill", "none");
+            .style("fill", "none")
+            .attr("clip-path", "url(#ohlc-clip)");
     }
 
-    /* this clipPath hides some elements from overflowing */
+    /* this clipPath hides OHLC elements from overflowing */
     addOhlcClip() {
         this.svg.append("clipPath")
             .attr("id", "ohlc-clip")
             .append("rect")
             .attr("width", this.width - 5)
-            .attr("height", this.ohlcHeight);
+            .attr("height", this.ohlcHeight + this.macdHeight);
     }
 
     /* Define the div for the tooltip */
@@ -209,6 +208,26 @@ class MacdChart {
             .attr("y", d => this.yOhlcScale(Math.max(d.open, d.close)))
             .attr("height", d => (this.yOhlcScale(Math.min(d.open, d.close))
                 - this.yOhlcScale(Math.max(d.open, d.close))));
-        /* MACD line */
+        /* MACD lines */
+        const yMacdMin = d3.min(visibleData, d => Math.min(d.macd, d.signal));
+        const yMacdMax = d3.max(visibleData, d => Math.max(d.macd, d.signal));
+        if (yMacdMin === undefined || yMacdMax === undefined) {
+            return;
+        }
+        this.yMacdScale = d3.scaleLinear()
+            .domain([yMacdMin, yMacdMax])
+            .range([this.macdHeight - this.margin.top, this.margin.bottom]);
+        this.macdLine = d3.line()
+            .curve(d3.curveCatmullRom)
+            .x(d => new_x_scale(d.time))
+            .y(d => this.yMacdScale(d.macd));
+        this.signalLine = d3.line()
+            .curve(d3.curveCatmullRom)
+            .x(d => new_x_scale(d.time))
+            .y(d => this.yMacdScale(d.signal));
+        this.macdPath
+            .attr("d", this.macdLine);
+        this.signalPath
+            .attr("d", this.signalLine);
     }
 }

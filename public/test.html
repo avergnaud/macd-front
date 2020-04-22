@@ -71,7 +71,7 @@
       let ohlcData = data[0];
 
       let formattedData = ohlcData.map(item => {
-        let macd = macdByTimestamp.get(item.timeEpochTimestamp);
+        let macdObj = macdByTimestamp.get(item.timeEpochTimestamp);
         return {
             timeStamp: item.timeEpochTimestamp * 1000,
             time: new Date(item.timeEpochTimestamp * 1000),
@@ -79,8 +79,8 @@
             high: item.highPrice,
             low: item.lowPrice,
             close: item.closingPrice,
-            macdValue: macd ? macd.macdValue : undefined,
-            signalValue: macd ? macd.signalValue : undefined
+            macd: macdObj ? macdObj.macdValue : undefined,
+            signal: macdObj ? macdObj.signalValue : undefined
         }});
 
       chart.draw(formattedData);
