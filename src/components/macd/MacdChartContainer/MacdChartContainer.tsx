@@ -21,7 +21,7 @@ export const MacdChartContainer = () => {
 
     useEffect(() => {
 
-        fetch(`http://localhost:8080/macd/?macdDefinitionId=9394&last=35`)
+        fetch(`https://macd-definition.herokuapp.com/macd/?macdDefinitionId=1&last=35`)
             .then(res => res.json())
             .then(json => {
                 console.log(json)

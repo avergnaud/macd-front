@@ -22,7 +22,7 @@ export const OhlcChartContainer = () => {
     useEffect(() => {
         // code to run on component mount
 
-        fetch(`http://localhost:8080/ohlc/?chartEntityId=9395&last=35`)
+        fetch(`https://macd-definition.herokuapp.com/ohlc/?chartEntityId=2&last=35`)
             .then(res => res.json())
             .then(json => {
                 console.log(json)

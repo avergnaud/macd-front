@@ -1,7 +1,6 @@
 import React from 'react';
 import './App.css';
-import { OhlcChartContainer } from './components/ohlc/OhlcChartContainer/OhlcChartContainer';
-import { MacdChartContainer } from './components/macd/MacdChartContainer/MacdChartContainer';
+import { OhlcMacdChartContainer } from './components/ohlcmacd/OhlcMacdChartContainer/OhlcMacdChartContainer';
 
 function App() {
 
@@ -10,9 +9,10 @@ function App() {
       {/*
       <MyVisComponent />
       <MyD3Component data={[1,2,3]}/>
-      */}
       <OhlcChartContainer />
       <MacdChartContainer />
+      */}
+      <OhlcMacdChartContainer />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
@@ -27,7 +28,9 @@
   <h1>Test</h1>
   <div class="container">
     <div class="row">
-      <div id="chart-area"></div>
+      <div class="col-9">
+        <div id="chart-area"></div>
+      </div>
     </div>
   </div>
 
@@ -57,8 +60,8 @@
     });
 
     Promise.all([
-      d3.json("http://localhost:8080/ohlc/?chartEntityId=9395"),
-      d3.json("http://localhost:8080/macd/?macdDefinitionId=9394"),
+      d3.json("https://macd-definition.herokuapp.com/ohlc/?chartEntityId=2"),
+      d3.json("https://macd-definition.herokuapp.com/macd/?macdDefinitionId=1"),
     ]).then(function (data) {
 
       const macdByTimestamp = new Map();

@@ -3,9 +3,7 @@
  */
 class MacdChart {
 
-    /**
-     * initial setup
-     */
+    /* initial setup */
     constructor(opts) {
         /* DOM element for inserting the chart */
         this.element = opts.element;
@@ -18,15 +16,17 @@ class MacdChart {
         this.timeFormat = d3.timeFormat(this.config.timeFormat);
     }
 
-    /**
-     * draws the graph with new data
-     */
+    /* draws the graph with new data */
     draw(newData) {
 
         this.element.innerHTML = '';
         this.svg = d3.select(this.element).append("svg")
+        .attr("viewBox", 
+            `0 0 ${this.width} ${this.ohlcHeight + this.macdHeight}`);
+        /*
             .attr("width", this.width)
             .attr("height", this.ohlcHeight + this.macdHeight);
+        */
         this.ohlcG = this.svg.append("g")
             .attr("transform", "translate(-" + this.margin.yaxis + ",0)");
         this.macdG = this.svg.append("g")
@@ -84,6 +84,13 @@ class MacdChart {
         this.yOhlcAxisG = this.svg.append('g')
             .attr("class", "yaxis")
             .attr('transform', 'translate(' + (this.width - this.margin.yaxis) + ', 0)');
+        /* see this.yMacdAxisG.call(this.yMacdAxis) */
+        this.yMacdAxis = d3.axisRight(this.yMacdScale)
+            .ticks(3);
+        this.yMacdAxisG = this.svg.append('g')
+            .attr("class", "yaxis")
+            .attr('transform', 'translate(' + (this.width - this.margin.yaxis)
+                + ', ' + this.ohlcHeight + ')');
     }
 
     /* draws the OHLC part of the graph */
@@ -128,14 +135,14 @@ class MacdChart {
         /* adds each axis to its g element: */
         this.yOhlcAxisG.call(this.yOhlcAxis);
         this.xAxisG.call(this.xAxis);
+        this.yMacdAxisG.call(this.yMacdAxis);
         /* manages the horizontal panning without zoom: */
         this.zoom = d3.zoom()
             .on("zoom", () => this.zoomed(newData));
         this.svg.call(this.zoom);
     }
 
-    /* draws the MACD part of the graph 
-    */
+    /* draws the MACD part of the graph */
     drawMacd(newData) {
 
         this.macdLine = d3.line()
@@ -214,9 +221,8 @@ class MacdChart {
         if (yMacdMin === undefined || yMacdMax === undefined) {
             return;
         }
-        this.yMacdScale = d3.scaleLinear()
-            .domain([yMacdMin, yMacdMax])
-            .range([this.macdHeight - this.margin.top, this.margin.bottom]);
+        this.yMacdScale.domain([yMacdMin, yMacdMax]);
+        this.yMacdAxisG.call(this.yMacdAxis.scale(this.yMacdScale));
         this.macdLine = d3.line()
             .curve(d3.curveCatmullRom)
             .x(d => new_x_scale(d.time))
