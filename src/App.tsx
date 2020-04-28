@@ -5,15 +5,13 @@ import { OhlcMacdChartContainer } from './components/ohlcmacd/OhlcMacdChartConta
 function App() {
 
   return (
-    <div className="App">
-      {/*
-      <MyVisComponent />
-      <MyD3Component data={[1,2,3]}/>
-      <OhlcChartContainer />
-      <MacdChartContainer />
-      */}
+    <div className="container">
+    <div className="row">
+      <div className="col-12 col-md-9 col-lg-6">
       <OhlcMacdChartContainer />
+      </div>
     </div>
+  </div>
   );
 }
 

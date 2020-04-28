@@ -60,8 +60,12 @@
     });
 
     Promise.all([
+      /*
       d3.json("https://macd-definition.herokuapp.com/ohlc/?chartEntityId=2"),
       d3.json("https://macd-definition.herokuapp.com/macd/?macdDefinitionId=1"),
+      */
+      d3.json("http://localhost:8080/ohlc/?chartEntityId=9395"),
+      d3.json("http://localhost:8080/macd/?macdDefinitionId=9394"),
     ]).then(function (data) {
 
       const macdByTimestamp = new Map();

@@ -99,6 +99,23 @@ export class OhlcMacdChartD3 {
                 + ', ' + this.ohlcHeight + ')');
     }
 
+    /* event listener */
+    onOver(d) {
+        this.div.transition()
+            .duration(200)
+            .style("opacity", .9);
+        this.div.html(this.timeFormat(d.time) + "<br/>" + d.close + "€")
+            .style("left", (d3.event.pageX) - 28 + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+    }
+
+    /* event listener */
+    onOut(d) {
+        this.div.transition()
+            .duration(500)
+            .style("opacity", 0);
+    }
+
     /* draws the OHLC part of the graph */
     drawOhlc(newData) {
         /* ohlcClip is a clipPath, tooltipDiv is a div */
@@ -124,19 +141,10 @@ export class OhlcMacdChartD3 {
                 - this.yOhlcScale(Math.max(d.open, d.close))))
             .attr("fill", d => (d.open > d.close ? "red" : "green"))
             .attr("stroke", "black")
-            .on("mouseover", d => {
-                this.div.transition()
-                    .duration(200)
-                    .style("opacity", .9);
-                this.div.html(this.timeFormat(d.time) + "<br/>" + d.close + "€")
-                    .style("left", (d3.event.pageX) + 28 + "px")
-                    .style("top", (d3.event.pageY - 28) + "px");
-            })
-            .on("mouseout", d => {
-                this.div.transition()
-                    .duration(500)
-                    .style("opacity", 0);
-            })
+            .on("mouseover", this.onOver.bind(this))
+            .on("mouseout", this.onOut.bind(this))
+            .on("touchstart", this.onOver.bind(this))
+            .on("touchend", this.onOut.bind(this))
             .attr("clip-path", "url(#ohlc-clip)");
         /* adds each axis to its g element: */
         this.yOhlcAxisG.call(this.yOhlcAxis);
