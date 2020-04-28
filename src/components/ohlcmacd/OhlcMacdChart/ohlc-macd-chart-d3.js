@@ -7,8 +7,6 @@ export class OhlcMacdChartD3 {
 
     /* initial setup */
     constructor(opts) {
-        /* DOM element for inserting the chart */
-        //this.element = opts.element;
         /* visual settings */
         this.config = opts.config;
         this.margin = this.config.margin;
@@ -16,6 +14,9 @@ export class OhlcMacdChartD3 {
         this.ohlcHeight = this.config.innerOhlcHeight + this.margin.top + this.margin.bottom;
         this.macdHeight = this.config.innerMacdHeight + this.margin.top + this.margin.bottom;
         this.timeFormat = d3.timeFormat(this.config.timeFormat);
+        /* callbacks */
+        this.onOver = opts.onOver;
+        this.onOut = opts.onOut;
     }
 
     setElement(element) {
@@ -29,12 +30,10 @@ export class OhlcMacdChartD3 {
         this.svg = d3.select(this.element).append("svg")
         .attr("viewBox", 
             `0 0 ${this.width} ${this.ohlcHeight + this.macdHeight}`);
-        /*
-            .attr("width", this.width)
-            .attr("height", this.ohlcHeight + this.macdHeight);
-        */
         this.ohlcG = this.svg.append("g")
             .attr("transform", "translate(-" + this.margin.yaxis + ",0)");
+        this.detail = this.svg.append("text")
+
         this.macdG = this.svg.append("g")
             .attr("transform", "translate(-" + this.margin.yaxis + "," + this.ohlcHeight + ")");
         this.createScales(newData);
@@ -97,23 +96,6 @@ export class OhlcMacdChartD3 {
             .attr("class", "yaxis")
             .attr('transform', 'translate(' + (this.width - this.margin.yaxis)
                 + ', ' + this.ohlcHeight + ')');
-    }
-
-    /* event listener */
-    onOver(d) {
-        this.div.transition()
-            .duration(200)
-            .style("opacity", .9);
-        this.div.html(this.timeFormat(d.time) + "<br/>" + d.close + "€")
-            .style("left", (d3.event.pageX) - 28 + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-    }
-
-    /* event listener */
-    onOut(d) {
-        this.div.transition()
-            .duration(500)
-            .style("opacity", 0);
     }
 
     /* draws the OHLC part of the graph */
