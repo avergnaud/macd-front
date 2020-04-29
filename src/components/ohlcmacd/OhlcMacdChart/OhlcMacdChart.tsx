@@ -35,6 +35,6 @@ export const OhlcMacdChart = (props: OhlcMacdChartProps) => {
     
     return <React.Fragment>
             <div className={styles.ToolTip}>{toolTip}</div>
-            <div ref={d3Container}></div>
+            <div ref={d3Container}>Loading...</div>
         </React.Fragment>;
 }
