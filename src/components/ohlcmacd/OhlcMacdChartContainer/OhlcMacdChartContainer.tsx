@@ -40,13 +40,13 @@ export const OhlcMacdChartContainer = () => {
     /* component did mount */
 
     Promise.all([
+      fetch("https://macd-definition.herokuapp.com/ohlc/?chartEntityId=2&last=100"),
+      fetch("https://macd-definition.herokuapp.com/macd/?macdDefinitionId=1&last=100"),
       
-      fetch("https://macd-definition.herokuapp.com/ohlc/?chartEntityId=2"),
-      fetch("https://macd-definition.herokuapp.com/macd/?macdDefinitionId=1"),
       /*
      fetch("http://localhost:8080/ohlc/?chartEntityId=9395"),
      fetch("http://localhost:8080/macd/?macdDefinitionId=9394")
-     */
+     */ 
     ])
       .then(async ([ohlcData, macdData]) => {
         const ohlcJson = await ohlcData.json();
@@ -87,7 +87,7 @@ export const OhlcMacdChartContainer = () => {
   return (
     <React.Fragment>
       <h3>ETHEUR 1 day + MACD</h3>
-      <h5>Horizontal scrollable chart</h5>
+      <h6>Horizontal scrollable chart. Last 100 days</h6>
       <OhlcMacdChart data={data} visual={visual} />
     </React.Fragment>
     );

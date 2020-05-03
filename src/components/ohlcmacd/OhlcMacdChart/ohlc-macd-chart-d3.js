@@ -102,7 +102,6 @@ export class OhlcMacdChartD3 {
     drawOhlc(newData) {
         /* ohlcClip is a clipPath, tooltipDiv is a div */
         this.addOhlcClip();
-        this.addTooltipDiv();
         /* draws the lines representing High and Low values of OHLC: */
         this.ohlcG.selectAll("line").data(newData).enter()
             .append("svg:line")
@@ -176,13 +175,6 @@ export class OhlcMacdChartD3 {
             .append("rect")
             .attr("width", this.width - 5)
             .attr("height", this.ohlcHeight + this.macdHeight);
-    }
-
-    /* Define the div for the tooltip */
-    addTooltipDiv() {
-        this.div = d3.select(this.element).append("div")
-            .attr("class", "tooltip")
-            .style("opacity", 0);
     }
 
     /* handles redraw after horizontal panning (rescaleX, y range...) */
