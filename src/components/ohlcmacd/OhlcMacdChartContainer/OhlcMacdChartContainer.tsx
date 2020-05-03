@@ -84,11 +84,5 @@ export const OhlcMacdChartContainer = () => {
       });
   }, []);
 
-  return (
-    <React.Fragment>
-      <h3>ETHEUR 1 day + MACD</h3>
-      <h6>Horizontal scrollable chart. Last 100 days</h6>
-      <OhlcMacdChart data={data} visual={visual} />
-    </React.Fragment>
-    );
+  return <OhlcMacdChart data={data} visual={visual} />;
 };
