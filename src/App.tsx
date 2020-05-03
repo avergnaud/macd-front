@@ -7,7 +7,7 @@ function App() {
   return (
     <div className="container">
       <div className="jumbotron">
-        <h1>ETHEUR 1 day + MACD</h1>
+        <h3>ETHEUR 1 day + MACD</h3>
         <p>Horizontal scrollable chart. Last 100 days</p>
       </div>
       <div className="row">
